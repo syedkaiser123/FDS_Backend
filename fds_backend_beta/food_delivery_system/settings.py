@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'food_delivery_system',
     'food_delivery_system.orders',
     'food_delivery_system.users',
+    'food_delivery_system.restaurant',
 ]
 
 REST_FRAMEWORK = {

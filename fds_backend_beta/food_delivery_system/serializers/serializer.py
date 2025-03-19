@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import make_password
 
 from food_delivery_system.users.models import CustomUser
 
-Restaurant = apps.get_model('orders', 'Restaurant')
+Restaurant = apps.get_model('restaurant', 'Restaurant')
 Category = apps.get_model('orders', 'Category')
 MenuItem = apps.get_model('orders', 'MenuItem')
 Order = apps.get_model('orders', 'Order')
@@ -50,6 +50,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "customer", "restaurant", "status", "total_price", "created_at", "updated_at", "items"]
+        read_only_fields = ['status', 'created_at', 'updated_at']
 
     def get_items(self, obj):
         return OrderItemSerializer(obj.order_items.all(), many=True).data

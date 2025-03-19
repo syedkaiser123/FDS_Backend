@@ -13,7 +13,7 @@ class CustomPagination(PageNumberPagination):
         """Customize the paginated response."""
         return Response({
             'total_pages': self.page.paginator.num_pages,
-            'total_users': self.page.paginator.count,
+            'total_objects': self.page.paginator.count,
             'current_page': self.page.number,
             'next': self.get_next_link(),
             'previous': self.get_previous_link(),

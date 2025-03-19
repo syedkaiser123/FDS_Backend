@@ -2,19 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from food_delivery_system.users.models import CustomUser
-
-User = CustomUser
-
-
-class Restaurant(models.Model):
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="restaurant")
-    name = models.CharField(max_length=255)
-    address = models.TextField()
-    phone = models.CharField(max_length=20, null=True)
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
-
-    def __str__(self):
-        return self.name
+from food_delivery_system.restaurant.models import Restaurant
 
 
 class Category(models.Model):
@@ -41,10 +29,11 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('preparing', 'Preparing'),
+        ('picked up', 'Picked Up'),
         ('delivered', 'Delivered'),
         ('canceled', 'Canceled'),
     ]
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, null=False, default=1, related_name="orders")
+    customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=False, related_name="orders")
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="orders")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -71,7 +60,7 @@ class Staff(models.Model):
         ('chef', 'Chef'),
         ('delivery', 'Delivery Personnel'),
     ]
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="staff")
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="staff")
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="staff")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
