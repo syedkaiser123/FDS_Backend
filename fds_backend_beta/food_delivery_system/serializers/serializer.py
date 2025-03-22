@@ -1,6 +1,4 @@
 from rest_framework import serializers
-# from backend_app.orders.models import Restaurant, Category, MenuItem, Order, OrderItem, Staff
-
 from django.apps import apps
 from django.contrib.auth.hashers import make_password
 
@@ -42,6 +40,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)  # Hash the password
         return super().update(instance, validated_data)
+
+    def validate_phone_number(self, value):
+        if value == "":
+            return None  # Treat empty string as NULL
+        if CustomUser.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError("A user with this phone number already exists.")
+        return value
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)  # Nesting customer details

@@ -4,6 +4,7 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
+from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from django.contrib.auth import authenticate
@@ -12,6 +13,7 @@ from rest_framework.authtoken.models import Token
 
 from food_delivery_system.serializers.serializer import UserSerializer, UserRegistrationSerializer
 from food_delivery_system.users.models import CustomUser
+from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.utils.pagination import CustomPagination
 
 
@@ -78,13 +80,29 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
-        """Create a new user with validation checks."""
+        """Create a new user and related objects atomically."""
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
-            return Response({"message": "User created successfully.", "results": UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+
+            # Create a related restaurant atomically
+            if request.data.get("is_restaurant"):
+                Restaurant.objects.create(
+                    owner=user,
+                    phone=user.phone_number,
+                    name=request.data.get("restaurant_name", ""),
+                    address=request.data.get("restaurant_address", ""),
+                )
+            return Response(
+                    {
+                    "message": "User created successfully.",
+                    "results": UserSerializer(user).data
+                    },
+                    status=status.HTTP_201_CREATED
+                            )
         except IntegrityError:
             return Response({"error": "User with this information already exists."}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
@@ -92,10 +110,11 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         """Update user details with permission check."""
         try:
-            instance = self.get_object()
+            instance = self.get_queryset().select_for_update().get(pk=kwargs["pk"])  # Lock the row for update, to prevent race conditions.
             if not request.user.is_staff and request.user != instance:
                 raise PermissionDenied("You can only update your own profile.")
 
@@ -110,10 +129,11 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         """Delete a user with safety checks."""
         try:
-            instance = self.get_object()
+            instance = self.get_queryset().select_for_update().get(pk=kwargs["pk"])  # Lock the row for delete, to prevent race conditions.
             if not request.user.is_staff and request.user != instance:
                 raise PermissionDenied("You do not have permission to delete this user.")
             

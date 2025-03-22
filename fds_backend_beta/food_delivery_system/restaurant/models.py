@@ -7,9 +7,9 @@ User = CustomUser
 
 class Restaurant(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="restaurant")
-    name = models.CharField(max_length=255)
-    address = models.TextField()
-    phone = models.CharField(max_length=20, null=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(default=timezone.now, editable=False)
 

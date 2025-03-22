@@ -14,6 +14,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.utils import timezone
+from django.db import transaction
 from food_delivery_system.restaurant.models import Restaurant
 
 
@@ -29,10 +30,11 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         """
         Define custom permissions for different actions.
         """
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsRestaurantOwner() or IsRestaurantManagerOrOwner()]
+        if self.action in ['create', 'partial_update', 'update', 'partial_update', 'destroy']:
+            return [IsRestaurantOwner(), IsRestaurantManagerOrOwner()]
         return super().get_permissions()
 
+    @transaction.atomic
     def perform_create(self, serializer):
         """
         Automatically set the owner of the restaurant during creation.
@@ -56,12 +58,13 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         except NotFound:
             return Response({'error': 'Restaurant not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    def update(self, request, *args, **kwargs):
+    @transaction.atomic
+    def partial_update(self, request, *args, **kwargs):
         """
-        Update a restaurant with permission checks.
+        Update a restaurant(partial) with permission checks.
         """
         try:
-            instance = self.get_object()
+            instance = self.get_queryset().select_for_update().get(pk=kwargs["pk"])  # Lock the row for update, to prevent race conditions.
             self.check_object_permissions(request, instance)
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
@@ -72,12 +75,13 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         except NotFound:
             return Response({'error': 'Restaurant not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+    @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         """
         Delete a restaurant with permission checks.
         """
         try:
-            instance = self.get_object()
+            instance = self.get_queryset().select_for_update().get(pk=kwargs["pk"])  # Lock the row for delete, to prevent race conditions.
             self.check_object_permissions(request, instance)
             instance.delete()
             return Response({"message": "Restaurant deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

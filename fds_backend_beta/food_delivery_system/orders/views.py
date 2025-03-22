@@ -15,6 +15,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.utils import timezone
+from django.db import transaction
 from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.serializers.serializer import RestaurantSerializer
 from food_delivery_system.utils.pagination import CustomPagination
@@ -32,11 +33,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             return [IsCustomer()]
         return super().get_permissions()
 
+    @transaction.atomic
     def perform_create(self, serializer):
         """
         Save the order with the authenticated user as the customer.
         """
-        import ipdb;ipdb.set_trace()
         if not self.request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to create an order.")
         serializer.save(customer=self.request.user, created_at=timezone.now(), updated_at=timezone.now())
@@ -61,7 +62,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return [IsRestaurantOwner() or IsRestaurantManagerOrOwner() or IsChef()]
+            return [IsRestaurantOwner(), IsRestaurantManagerOrOwner(), IsChef()]
         return super().get_permissions()
 
     def retrieve(self, request, *args, **kwargs):
