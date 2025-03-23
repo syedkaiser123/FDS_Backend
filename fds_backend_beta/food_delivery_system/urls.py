@@ -26,7 +26,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/login/gettoken/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Now explicitly under /api/login
     path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),     # Now explicitly under /api/login
-    path("api/", include('food_delivery_system.orders.urls')),  # Include the orders app URLs under 'api/orders'.
+    path("api/orders/", include('food_delivery_system.orders.urls')),  # Include the orders app URLs under 'api/orders'.
     path("api/users/", include('food_delivery_system.users.urls')),     # Include the users app URLs under 'api/users'.
     path("api/restaurant/", include('food_delivery_system.restaurant.urls')),     # Include the users app URLs under 'api/restaurant'.
 ]

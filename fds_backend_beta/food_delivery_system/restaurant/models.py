@@ -13,6 +13,11 @@ class Restaurant(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(default=timezone.now, editable=False)
 
+    def save(self, *args, **kwargs):
+        if self.name is not None and not isinstance(self.name, str):
+            raise TypeError("The 'name' field must be a string.")
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 

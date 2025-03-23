@@ -50,16 +50,44 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)  # Nesting customer details
-    items = serializers.SerializerMethodField()
+    items = serializers.ListField(write_only=True)  # Accept items in the payload
 
     class Meta:
         model = Order
-        fields = ["id", "customer", "restaurant", "status", "total_price", "created_at", "updated_at", "items"]
-        read_only_fields = ['status', 'created_at', 'updated_at']
+        fields = ["id", "customer", "status", "restaurant", "status", "total_price", "created_at", "updated_at", "items"]
+        read_only_fields = ['created_at', 'updated_at']
 
-    def get_items(self, obj):
-        return OrderItemSerializer(obj.order_items.all(), many=True).data
+    def create(self, validated_data):
+        # Extract items from the payload
+        items_data = validated_data.pop("items", [])
+        order = super().create(validated_data)
 
+        # Create OrderItem and MenuItem objects
+        for item_data in items_data:
+            menu_item_name = item_data.get("menu_item")
+            quantity = item_data.get("quantity", 1)
+
+            # Create or get the MenuItem
+            menu_item, _ = MenuItem.objects.get_or_create(
+                name=menu_item_name,
+                defaults={"price": 0.00, "available": True}  # Default values for MenuItem
+            )
+
+            # Create the OrderItem
+            OrderItem.objects.create(
+                order=order,
+                menu_item=menu_item,
+                quantity=quantity,
+                price=menu_item.price * quantity,
+            )
+
+        return order
+
+    def to_representation(self, instance):
+        # Add items to the serialized output
+        representation = super().to_representation(instance)
+        representation["items"] = OrderItemSerializer(instance.order_items.all(), many=True).data
+        return representation
 
 class RestaurantSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)

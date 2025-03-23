@@ -2,16 +2,13 @@ from django.urls import path, include, re_path
 from rest_framework.routers import DefaultRouter
 from food_delivery_system.orders.views import OrderViewSet, OrderItemViewSet
 
-router = DefaultRouter()
-router.register(r'orders', OrderViewSet, basename='order')
-router.register(r'get-order-items', OrderItemViewSet, basename='orderitem')
-
 urlpatterns = [
-    path('', include(router.urls)),
+    # OrderViewSet endpoints
+    path('', OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='order-list'),  # List and Create
+    path('<int:pk>/', OrderViewSet.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}), name='order-detail'),  # Retrieve, Update, Destroy orders
+
+    # OrderItemViewSet endpoints
+    path('get-order-items/', OrderItemViewSet.as_view({'get': 'list'}), name='orderitem-list'),  # List
+    path('get-order-items/<int:pk>/', OrderItemViewSet.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}), name='orderitem-detail'),  # Retrieve, Update, Destroy order-items
 ]
 
-# urlpatterns = [
-#     re_path(r'^o.*s$', OrderViewSet.as_view({'get': 'list'}), name='order-list'),
-#     re_path(r'^o.*s$', OrderViewSet.as_view({'post': 'create'}), name='order-list'),
-#     re_path(r'^get-order-items$', OrderItemViewSet.as_view({'get': 'list'}), name='orderitem-list'),
-# ]

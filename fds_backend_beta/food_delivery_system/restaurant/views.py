@@ -34,15 +34,16 @@ class RestaurantViewSet(viewsets.ModelViewSet):
             return [IsRestaurantOwner(), IsRestaurantManagerOrOwner()]
         return super().get_permissions()
 
-    @transaction.atomic
-    def perform_create(self, serializer):
-        """
-        Automatically set the owner of the restaurant during creation.
-        """
-        user = self.request.user
-        user.is_restaurant = True  # Set the is_restaurant flag to True
-        user.save()
-        serializer.save(owner=user, created_at=timezone.now(), updated_at=timezone.now())
+    # @transaction.atomic
+    # def perform_create(self, serializer):
+    #     """
+    #     Automatically set the owner of the restaurant during creation.
+    #     """
+    #     import ipdb; ipdb.set_trace()
+    #     user = self.request.user
+    #     user.is_restaurant = True  # Set the is_restaurant flag to True
+    #     user.save()
+    #     serializer.save(owner=user, created_at=timezone.now(), updated_at=timezone.now())
 
     def retrieve(self, request, *args, **kwargs):
         """

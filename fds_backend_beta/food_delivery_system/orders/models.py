@@ -32,6 +32,7 @@ class Order(models.Model):
         ('picked up', 'Picked Up'),
         ('delivered', 'Delivered'),
         ('canceled', 'Canceled'),
+        ('completed', 'Completed')
     ]
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=False, related_name="orders")
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="orders")

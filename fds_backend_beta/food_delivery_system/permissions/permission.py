@@ -27,7 +27,6 @@ class IsCustomer(permissions.BasePermission):
     """Allows access only to customers for their own orders."""
 
     def has_object_permission(self, request, view, obj):
-        import pdb; pdb.set_trace()
         return request.user == obj.customer
 
 
