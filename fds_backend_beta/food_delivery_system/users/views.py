@@ -102,7 +102,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     break  # Exit the loop once the role is matched
                 
             # Create a related restaurant atomically if the user is a restaurant owner
-            if request.data.get("role") == "restaurant":
+            if request.data.get("role"):
                 restaurant = Restaurant.objects.create(
                     owner=user,
                     phone=user.phone_number,

@@ -34,8 +34,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])  # Ensures password is hashed
-        import ipdb;ipdb.set_trace()
-        # user = super().create(validated_data)
 
         # Extract the role from the payload
         role = self.context['request'].data.get('role')
