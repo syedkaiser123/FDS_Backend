@@ -18,6 +18,12 @@ class Restaurant(models.Model):
             raise TypeError("The 'name' field must be a string.")
         super().save(*args, **kwargs)
 
+    class Meta:
+        permissions = [
+            ("can_manage_restaurant", "Can manage restaurant"),     # For Restaurant Owners
+            ("can_view_analytics", "Can view analytics"),   # For Restaurant Owners
+        ]
+
     def __str__(self):
         return self.name
 

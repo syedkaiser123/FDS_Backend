@@ -1,5 +1,9 @@
 from rest_framework import permissions
 
+class CanMarkDeliveredPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm('orders.can_mark_delivered')
+
 
 class IsRestaurantOwner(permissions.BasePermission):
     """Allows access only to restaurant owners or admin users."""

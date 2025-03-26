@@ -9,6 +9,12 @@ class Category(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="categories")
     name = models.CharField(max_length=100)
 
+    class Meta:
+        # No need to define default permissions like add, change, delete, view
+        permissions = [
+            ("can_manage_categories", "Can manage categories"),     # For Restaurant Owners and Managers
+        ]
+
     def __str__(self):
         return f"{self.restaurant.name} - {self.name}"
 
@@ -20,6 +26,14 @@ class MenuItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     available = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        # No need to define default permissions like add, change, delete, view
+        permissions = [
+            ("can_manage_menuitems", "Can manage menu items"),  # For Restaurant Owners, Managers, and Chefs
+            ("can_mark_available", "Can mark menu items as available"),     # For Chefs
+            ("can_mark_unavailable", "Can mark menu items as unavailable"),     # For Chefs
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.price}"
@@ -41,6 +55,14 @@ class Order(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(default=timezone.now, editable=False)
 
+    class Meta:
+        # No need to define default permissions like add, change, delete, view
+        permissions = [
+            ("can_mark_delivered", "Can mark orders as delivered"),     # For Delivery Personnel
+            ("can_cancel_order", "Can cancel an order"),    # For Customers
+            ("can_update_order_status", "Can update the status of an order"),   # For Managers and Chefs
+        ]
+
     def __str__(self):
         return f"Order {self.id} - {self.status}"
 
@@ -50,6 +72,12 @@ class OrderItem(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name="order_items")
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    class Meta:
+        # No need to define default permissions like add, change, delete, view
+        permissions = [
+            ("can_manage_orderitems", "Can manage order items"),
+        ]
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name} in Order {self.order.id}"
@@ -65,6 +93,12 @@ class Staff(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="staff")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        # No need to define default permissions like add, change, delete, view
+        permissions = [
+            ("can_manage_staff", "Can manage staff"),   # For Restaurant Owners and Managers
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.role} at {self.restaurant.name}"

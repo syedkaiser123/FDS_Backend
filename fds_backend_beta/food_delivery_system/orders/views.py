@@ -7,8 +7,14 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from .models import Order, OrderItem, Staff, Category
-from food_delivery_system.serializers.serializer import OrderSerializer, OrderItemSerializer, StaffSerializer, CategorySerializer
-from food_delivery_system.permissions.permission import IsRestaurantOwner, IsRestaurantManagerOrOwner, IsCustomer, IsChef, IsDeliveryPersonnel
+from food_delivery_system.serializers.serializer import (OrderSerializer, OrderItemSerializer,
+                                                        StaffSerializer, CategorySerializer
+                                                        )
+from food_delivery_system.permissions.permission import (
+                                                        IsRestaurantOwner, IsRestaurantManagerOrOwner,
+                                                        IsCustomer, IsChef, IsDeliveryPersonnel,
+                                                        CanMarkDeliveredPermission
+                                                        )
 
 
 from rest_framework import viewsets, permissions, status
@@ -19,12 +25,16 @@ from django.db import transaction
 from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.serializers.serializer import RestaurantSerializer
 from food_delivery_system.utils.pagination import CustomPagination
+# from food_delivery_system.utils.utilities import UserPermissions
+# from .mixins import PermissionsMixin  # Import the mixin
 
+
+# user_auth = UserPermissions()
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, CanMarkDeliveredPermission]
     pagination_class = CustomPagination
 
     def get_permissions(self):
@@ -54,6 +64,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), IsCustomer()]
 
         return super().get_permissions()
+
+    # def get_permissions(self):
+    #     return super().get_permissions(self)
 
     @transaction.atomic
     def perform_create(self, serializer):

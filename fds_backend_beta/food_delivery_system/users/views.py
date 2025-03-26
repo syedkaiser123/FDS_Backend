@@ -8,13 +8,18 @@ from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import Token
 
 
-from food_delivery_system.serializers.serializer import UserSerializer, UserRegistrationSerializer
+from food_delivery_system.serializers.serializer import UserRegistrationSerializer
 from food_delivery_system.users.models import CustomUser
 from food_delivery_system.restaurant.models import Restaurant
+from food_delivery_system.orders.models import Staff
 from food_delivery_system.utils.pagination import CustomPagination
+from food_delivery_system.utils.utilities import RBACPermissionManager
+
+rbac_permissions = RBACPermissionManager()
 
 
 # class LoginView(APIView):
@@ -44,7 +49,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     
     queryset = CustomUser.objects.all().order_by('id')
-    serializer_class = UserSerializer
+    serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
@@ -52,7 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Use UserRegistrationSerializer for user creation (registration)."""
         if self.action in ['create', 'update', 'partial_update']:
             return UserRegistrationSerializer
-        return UserSerializer
+        return UserRegistrationSerializer
 
     def list(self, request, *args, **kwargs):
         """Retrieve all users with pagination."""
@@ -82,29 +87,43 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        """Create a new user and related objects atomically."""
+        """Create a new user and related objects, assign permissions atomically."""
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
 
-            # Create a related restaurant atomically
-            if request.data.get("is_restaurant"):
-                Restaurant.objects.create(
+            # Assign user to a group based on the given role
+            for role, group_name in rbac_permissions.role_permissions_map.items():
+                if request.data.get("role") == role:
+                    group_name = group_name["group"]
+                    group = Group.objects.get(name=group_name)
+                    user.groups.add(group)
+                    break  # Exit the loop once the role is matched
+                
+            # Create a related restaurant atomically if the user is a restaurant owner
+            if request.data.get("role") == "restaurant":
+                restaurant = Restaurant.objects.create(
                     owner=user,
                     phone=user.phone_number,
                     name=request.data.get("restaurant_name", ""),
                     address=request.data.get("restaurant_address", ""),
                 )
+            
+            role = request.data.get("role")
+            # Create the Staff object if a role is provided
+            if role:
+                Staff.objects.create(user=user, restaurant=restaurant, role=role)
+            
             return Response(
                     {
                     "message": "User created successfully.",
-                    "results": UserSerializer(user).data
+                    "results": UserRegistrationSerializer(user).data
                     },
                     status=status.HTTP_201_CREATED
                             )
-        except IntegrityError:
-            return Response({"error": "User with this information already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as exc:
+            return Response({"error": f"{exc}."}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

@@ -15,31 +15,59 @@ Staff = apps.get_model('orders', 'Staff')
 User = CustomUser
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "username", "email", "phone_number", "address", "is_restaurant"]
+# class UserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ["id", "username", "email", "phone_number", "address", "is_restaurant"]
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
+    role = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'password', 'phone_number', 'address', 'is_restaurant']
+        fields = ['username', 'email', 'password', 'phone_number', 'address', 'is_restaurant', 'is_manager', 'is_chef', 'is_delivery_personnel', 'role']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
         }
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])  # Ensures password is hashed
-        return super().create(validated_data)
+        import ipdb;ipdb.set_trace()
+        # user = super().create(validated_data)
+
+        # Extract the role from the payload
+        role = self.context['request'].data.get('role')
+
+        if role == 'restaurant':
+            validated_data['is_restaurant'] = True
+        elif role == 'manager':
+            validated_data['is_manager'] = True
+        elif role == 'chef':
+            validated_data['is_chef'] = True
+        elif role == 'delivery':
+            validated_data['is_delivery_personnel'] = True
+        else:
+            # Default all boolean fields to False if no role matches
+            validated_data['is_restaurant'] = False
+            validated_data['is_manager'] = False
+            validated_data['is_chef'] = False
+            validated_data['is_delivery_personnel'] = False
+        
+        user = super().create(validated_data)
+        return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)  # Hash the password
         return super().update(instance, validated_data)
+    
+    def get_role(self, obj):
+        # Fetch the role from the related Staff model
+        staff = Staff.objects.filter(user=obj).first()
+        return staff.role if staff else None
 
     def validate_phone_number(self, value):
         if value == "":
@@ -49,7 +77,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
 class OrderSerializer(serializers.ModelSerializer):
-    customer = UserSerializer(read_only=True)  # Nesting customer details
+    customer = UserRegistrationSerializer(read_only=True)  # Nesting customer details
     items = serializers.ListField(write_only=True)  # Accept items in the payload
 
     class Meta:
@@ -90,7 +118,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return representation
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    owner = UserSerializer(read_only=True)
+    owner = UserRegistrationSerializer(read_only=True)
 
     class Meta:
         model = Restaurant
@@ -123,7 +151,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class StaffSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = UserRegistrationSerializer(read_only=True)
     restaurant = RestaurantSerializer(read_only=True)
 
     class Meta:
