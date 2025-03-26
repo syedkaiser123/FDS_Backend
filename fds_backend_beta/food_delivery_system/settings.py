@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_extensions',
     'food_delivery_system',
     'food_delivery_system.orders',
     'food_delivery_system.users',

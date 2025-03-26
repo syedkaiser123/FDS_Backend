@@ -1,23 +1,29 @@
 
 from django.contrib.auth.models import Permission, Group
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import viewsets, permissions, status
 
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
+
+from food_delivery_system.permissions.permission import (
+                                                        IsRestaurantOwner, IsRestaurantManagerOrOwner,
+                                                        IsCustomer, IsChef, IsDeliveryPersonnel,
+                                                        CanMarkDeliveredPermission
+                                                        )
 
 class UserPermissions:
     """
     Mixin class to assign permissions based on the action and user type.
     """
 
-    def get_permissions(self):
+    def get_permissions(self, view):
         """
         Assign permissions based on the action and user type, leveraging role-based access from the Staff model.
         """
-        import ipdb;ipdb.set_trace()
         # Deny access to the `create` endpoint for non-customers
-        if self.action == 'create':
+        if view.action == 'create':
             # Ensure the user is authenticated and is a customer
             if not self.request.user or not self.request.user.is_authenticated:
                 raise PermissionDenied("You must be logged in to create an order.")
@@ -35,7 +41,7 @@ class UserPermissions:
         #     return [permissions.IsAuthenticated()]  # Admins only need to be authenticated
 
         # Assign `IsCustomer` permission for specific actions
-        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+        if view.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsCustomer()]
 
         return super().get_permissions()

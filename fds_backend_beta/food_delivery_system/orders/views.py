@@ -25,48 +25,22 @@ from django.db import transaction
 from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.serializers.serializer import RestaurantSerializer
 from food_delivery_system.utils.pagination import CustomPagination
-# from food_delivery_system.utils.utilities import UserPermissions
+from food_delivery_system.utils.utilities import UserPermissions
 # from .mixins import PermissionsMixin  # Import the mixin
 
 
-# user_auth = UserPermissions()
+user_auth = UserPermissions()
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated, CanMarkDeliveredPermission]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
+
     def get_permissions(self):
-        """
-        Assign permissions based on the action and user type, leveraging role-based access from the Staff model.
-        """
-        # Deny access to the `create` endpoint for non-customers
-        if self.action == 'create':
-            # Ensure the user is authenticated and is a customer
-            if not self.request.user or not self.request.user.is_authenticated:
-                raise PermissionDenied("You must be logged in to create an order.")
-
-            # Check if the user is a staff member with a specific role (e.g., manager, chef, etc.)
-            staff = getattr(self.request.user, 'staff', None)  # Reverse relationship from Staff to CustomUser
-            if ((staff and staff.role in ['manager', 'chef', 'delivery'])) or not self.request.user.is_superuser:
-                raise PermissionDenied("Staff members, managers, and restaurant owners cannot create orders.")
-
-            # Apply `IsCustomer` permission for customers and admin.
-            return [permissions.IsAuthenticated(), IsCustomer()]
-
-        # # Allow admin users to bypass specific permissions for other actions
-        # if self.request.user and self.request.user.is_superuser:
-        #     return [permissions.IsAuthenticated()]  # Admins only need to be authenticated
-
-        # Assign `IsCustomer` permission for specific actions
-        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated(), IsCustomer()]
-
-        return super().get_permissions()
-
-    # def get_permissions(self):
-    #     return super().get_permissions(self)
+        # return super().get_permissions()
+        return user_auth.get_permissions(self)  # run through custom permissions defined in utilities
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -95,7 +69,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         Update an order(partial) with permission checks.
         """
         try:
-            # import ipdb;ipdb.set_trace()
             instance = self.get_queryset().select_for_update().get(pk=kwargs["pk"])  # Lock the row for update, to prevent race conditions.
             self.check_object_permissions(request, instance)
             serializer = self.get_serializer(instance, data=request.data, partial=True)
