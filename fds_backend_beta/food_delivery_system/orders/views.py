@@ -20,6 +20,8 @@ from food_delivery_system.permissions.permission import (
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, CreateModelMixin
+from rest_framework.viewsets import GenericViewSet
 from django.utils import timezone
 from django.db import transaction
 from food_delivery_system.restaurant.models import Restaurant
@@ -31,7 +33,7 @@ from food_delivery_system.utils.utilities import UserPermissions
 
 user_auth = UserPermissions()
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericViewSet):
     queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]

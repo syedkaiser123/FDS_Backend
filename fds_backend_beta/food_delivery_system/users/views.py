@@ -11,6 +11,9 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import Token
 
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, CreateModelMixin
+from rest_framework.viewsets import GenericViewSet
+
 
 from food_delivery_system.serializers.serializer import UserRegistrationSerializer
 from food_delivery_system.users.models import CustomUser
@@ -37,7 +40,7 @@ rbac_permissions = RBACPermissionManager()
 #         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericViewSet):
     """
     User management with robust error handling & custom pagination.
 
@@ -58,7 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
         Override the get_queryset method to filter the users based on their role.
         """
         user = self.request.user
-        
+
         # Admins and superusers can access all users.
         if user.is_staff and user.is_superuser:
             return CustomUser.objects.all().order_by('-date_joined')
