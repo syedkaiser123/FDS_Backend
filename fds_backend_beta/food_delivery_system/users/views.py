@@ -53,6 +53,18 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
+    def get_queryset(self):
+        """
+        Override the get_queryset method to filter the users based on their role.
+        """
+        user = self.request.user
+        
+        # Admins and superusers can access all users.
+        if user.is_staff and user.is_superuser:
+            return CustomUser.objects.all().order_by('-date_joined')
+
+        return CustomUser.objects.filter(id=user.id)
+
     def get_serializer_class(self):
         """Use UserRegistrationSerializer for user creation (registration)."""
         if self.action in ['create', 'update', 'partial_update']:

@@ -2,6 +2,8 @@
 from django.contrib.auth.models import Permission, Group
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import viewsets, permissions, status
+from rest_framework.exceptions import PermissionDenied, NotFound
+
 
 
 from django.contrib.auth.decorators import login_required
@@ -25,26 +27,27 @@ class UserPermissions:
         # Deny access to the `create` endpoint for non-customers
         if view.action == 'create':
             # Ensure the user is authenticated and is a customer
-            if not self.request.user or not self.request.user.is_authenticated:
+            if not view.request.user or not view.request.user.is_authenticated:
                 raise PermissionDenied("You must be logged in to create an order.")
 
             # Check if the user is a staff member with a specific role (e.g., manager, chef, etc.)
-            staff = getattr(self.request.user, 'staff', None)  # Reverse relationship from Staff to CustomUser
-            if ((staff and staff.role in ['manager', 'chef', 'delivery'])) or not self.request.user.is_superuser:
+            staff = getattr(view.request.user, 'staff', None)  # Reverse relationship from Staff to CustomUser
+            if ((staff and staff.role in ['manager', 'chef', 'delivery'])):     # removing admin clause (or not view.request.user.is_superuser)
                 raise PermissionDenied("Staff members, managers, and restaurant owners cannot create orders.")
 
             # Apply `IsCustomer` permission for customers and admin.
             return [permissions.IsAuthenticated(), IsCustomer()]
 
         # # Allow admin users to bypass specific permissions for other actions
-        # if self.request.user and self.request.user.is_superuser:
+        # if view.request.user and view.request.user.is_superuser:
         #     return [permissions.IsAuthenticated()]  # Admins only need to be authenticated
 
         # Assign `IsCustomer` permission for specific actions
-        if view.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+        if view.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAuthenticated(), IsCustomer()]
 
-        return super().get_permissions()
+        # Default permissions for other actions
+        return [permissions.IsAuthenticated()]
     
 
     @login_required

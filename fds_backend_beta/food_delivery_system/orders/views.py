@@ -37,10 +37,36 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
+    def get_queryset(self):
+        """
+        Override the get_queryset method to filter the orders based on the user role.
+        """
+        user = self.request.user
+
+        # If the user is a not a customer, deny access to the orders.
+        if hasattr(user, 'staff') and user.staff.role in ['manager', 'chef', 'delivery']:
+            # Staff members should not access orders directly
+            raise PermissionDenied("You do not have permission to access orders.")
+
+        # If the user is a customer, return only their orders
+        if not user.is_staff and not user.is_superuser:
+            return Order.objects.filter(customer=user).order_by('-created_at')
+
+        # Admins and superusers can access all orders
+        return Order.objects.all().order_by('-created_at')
 
     def get_permissions(self):
-        # return super().get_permissions()
-        return user_auth.get_permissions(self)  # run through custom permissions defined in utilities
+        """
+        Override the get_permissions method to use the custom UserPermissions logic.
+        """
+        # Use custom permissions logic
+        custom_permissions = user_auth.get_permissions(self)
+
+        # If no custom permissions are returned, fall back to the default DRF logic
+        if not custom_permissions:
+            return super().get_permissions()
+        
+        return custom_permissions  # run through custom permissions defined in utilities
 
     @transaction.atomic
     def perform_create(self, serializer):
