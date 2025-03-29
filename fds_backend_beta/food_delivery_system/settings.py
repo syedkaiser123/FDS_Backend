@@ -28,6 +28,9 @@ SECRET_KEY = 'django-insecure-%kob)v4ojvz9zhxv&9hp2f@o*6#t*bh4ab6exlk4b7tj352y60
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+SILKY_PYTHON_PROFILER = True
+SILKY_META = True
+
 ALLOWED_HOSTS = [
     "127.0.0.1", 
     "localhost",
@@ -111,14 +114,14 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
+    'silk.middleware.SilkyMiddleware',  # Must be first!
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'silk.middleware.SilkyMiddleware'
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
 # MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")

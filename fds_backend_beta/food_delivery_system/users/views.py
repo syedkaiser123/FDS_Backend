@@ -14,6 +14,10 @@ from rest_framework.authtoken.models import Token
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, CreateModelMixin
 from rest_framework.viewsets import GenericViewSet
 
+from silk.profiling.profiler import silk_profile
+from silk.middleware import SilkyMiddleware
+
+SilkyMiddleware.debug_mode = True
 
 from food_delivery_system.serializers.serializer import UserRegistrationSerializer
 from food_delivery_system.users.models import CustomUser
@@ -86,6 +90,7 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericV
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @silk_profile(name="REST API- User Retrieval")
     def retrieve(self, request, *args, **kwargs):
         """Retrieve a single user, handling potential errors."""
         try:

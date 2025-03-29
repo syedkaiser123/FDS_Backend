@@ -36,12 +36,11 @@ class CreateUser(graphene.Mutation):
         is_delivery_personnel = graphene.Boolean(required=False)
         is_active = graphene.Boolean(required=False)
         is_staff = graphene.Boolean(required=False)
-        role = graphene.String(required=False)
 
 
     user = graphene.Field(CustomUserType)
 
-    def mutate(self, info, username, email, password, is_restaurant=False, is_chef=False, is_delivery_personnel=False, is_active=True, is_staff=False, role=None):
+    def mutate(self, info, username, email, password, is_restaurant=False, is_chef=False, is_delivery_personnel=False, is_active=True, is_staff=False):
         # Check if user already exists
         if get_user_model().objects.filter(username=username).exists():
             raise Exception("Username already exists")
