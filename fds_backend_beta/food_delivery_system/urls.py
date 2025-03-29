@@ -17,10 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from graphene_django.views import GraphQLView
+
 
 
 from food_delivery_system.views import homepage
 from .views import CustomTokenRefreshView, CustomTokenObtainPairView
+from food_delivery_system.graphql.schema import schema
+from food_delivery_system.middleware import QueryProfilerMiddleware
 
 
 urlpatterns = [
@@ -35,5 +39,14 @@ urlpatterns = [
     path("api/orders/", include('food_delivery_system.orders.urls')),  # Include the orders app URLs under 'api/orders'.
     path("api/users/", include('food_delivery_system.users.urls')),     # Include the users app URLs under 'api/users'.
     path("api/restaurant/", include('food_delivery_system.restaurant.urls')),     # Include the users app URLs under 'api/restaurant'.
+
+    # GraphQL viewsets
+    path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
+
+    # Silk Urls
+    path('silk/', include('silk.urls', namespace='silk')),
+
+
+
 ]
 

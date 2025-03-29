@@ -42,7 +42,7 @@ LOGGING = {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": "refresh_token.log",
+            "filename": "data.log",
             "formatter": "verbose",
         },
     },
@@ -53,7 +53,7 @@ LOGGING = {
         },
     },
     "loggers": {
-        "refresh_token": {
+        "data": {
             "handlers": ["file"],
             "level": "DEBUG",
             "propagate": False,  # Important: Prevents double logging
@@ -80,6 +80,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_extensions',
+    'graphene_django',
+    'silk',
     'food_delivery_system',
     'food_delivery_system.orders',
     'food_delivery_system.users',
@@ -116,6 +118,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'silk.middleware.SilkyMiddleware'
 ]
 
 # MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")
@@ -151,6 +154,10 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',
     }
+}
+
+GRAPHENE = {
+    "SCHEMA": "food_delivery_system.graphql.schema"
 }
 
 # Password validation

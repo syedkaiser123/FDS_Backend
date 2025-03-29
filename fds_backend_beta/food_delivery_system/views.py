@@ -6,7 +6,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.response import Response
 from rest_framework import status
 
-logger = logging.getLogger("refresh_token")
+logger = logging.getLogger("app_logs_with_token_info")
 
 
 def homepage(request):
