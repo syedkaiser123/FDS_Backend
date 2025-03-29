@@ -1,0 +1,4 @@
+INFO 2025-03-29 11:40:11,597 views Login attempt: {'username': 'user251', 'password': 'password123'}
+INFO 2025-03-29 11:40:11,932 views Login successful
+INFO 2025-03-29 11:40:34,018 views Login attempt: {'password': 'password123', 'username': 'user251'}
+INFO 2025-03-29 11:40:34,391 views Login successful

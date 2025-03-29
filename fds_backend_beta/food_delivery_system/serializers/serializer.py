@@ -145,7 +145,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'menu_item', 'quantity', 'price']
+        fields = ['id', 'order_id', 'menu_item', 'quantity', 'price']
 
 
 class StaffSerializer(serializers.ModelSerializer):

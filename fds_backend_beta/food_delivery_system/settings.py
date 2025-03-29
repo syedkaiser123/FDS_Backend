@@ -28,7 +28,44 @@ SECRET_KEY = 'django-insecure-%kob)v4ojvz9zhxv&9hp2f@o*6#t*bh4ab6exlk4b7tj352y60
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1", 
+    "localhost",
+    "a9c5-2406-7400-113-bfbe-681c-b133-39db-1b5e.ngrok-free.app"    # ngrok forwarded Husaru host address.
+]
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": "refresh_token.log",
+            "formatter": "verbose",
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+    },
+    "loggers": {
+        "refresh_token": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": False,  # Important: Prevents double logging
+        },
+        "django": {
+            "handlers": ["file"],
+            "level": "ERROR",  # Logs Django errors as well
+            "propagate": True,
+        },
+    },
+}
+
 
 
 # Application definition
@@ -80,6 +117,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")
+
 
 ROOT_URLCONF = 'food_delivery_system.urls'
 

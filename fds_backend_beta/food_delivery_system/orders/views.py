@@ -28,7 +28,6 @@ from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.serializers.serializer import RestaurantSerializer
 from food_delivery_system.utils.pagination import CustomPagination
 from food_delivery_system.utils.utilities import UserPermissions
-# from .mixins import PermissionsMixin  # Import the mixin
 
 
 user_auth = UserPermissions()
@@ -44,11 +43,11 @@ class OrderViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, Generic
         Override the get_queryset method to filter the orders based on the user role.
         """
         user = self.request.user
-
+        import ipdb;ipdb.set_trace()
         # If the user is a not a customer, deny access to the orders.
         if hasattr(user, 'staff') and user.staff.role in ['manager', 'chef', 'delivery']:
             # Staff members should not access orders directly
-            raise PermissionDenied("You do not have permission to access orders.")
+            raise PermissionDenied("You do not have permission to access orders other than yours.")
 
         # If the user is a customer, return only their orders
         if not user.is_staff and not user.is_superuser:
@@ -126,14 +125,32 @@ class OrderViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, Generic
 
 
 
-class OrderItemViewSet(viewsets.ModelViewSet):
+class OrderItemViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericViewSet):
     queryset = OrderItem.objects.all().order_by('id')
     serializer_class = OrderItemSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
 
+    def get_queryset(self):
+        """
+        Override the get_queryset method to filter the order items based on the user role.
+        """
+        user = self.request.user
+
+        # If the user is a not a customer, deny access to the orders.
+        if hasattr(user, 'staff') and user.staff.role in ['manager', 'chef', 'delivery']:
+            # Staff members should not access orders directly
+            raise PermissionDenied("You do not have permission to access orders other than yours.")
+
+        # If the user is a customer, return only their orders
+        if not user.is_staff and not user.is_superuser:
+            return OrderItem.objects.filter(order__customer=user).order_by('-order_id')
+
+        # Admins and superusers can access all orders
+        return OrderItem.objects.all().order_by('-order_id')
+
     def get_permissions(self):
-        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+        if self.action in ['list', 'retrieve', 'update', 'partial_update', 'destroy']:
             return [IsRestaurantOwner(), IsRestaurantManagerOrOwner(), IsChef()]
         return super().get_permissions()
 

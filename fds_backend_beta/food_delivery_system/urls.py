@@ -20,12 +20,18 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 from food_delivery_system.views import homepage
+from .views import CustomTokenRefreshView, CustomTokenObtainPairView
+
 
 urlpatterns = [
     path("", homepage),
     path("admin/", admin.site.urls),
-    path('api/login/gettoken/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Now explicitly under /api/login
-    path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),     # Now explicitly under /api/login
+    # path('api/login/gettoken/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Now explicitly under /api/login
+    path("api/login/gettoken/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),     # override default TokenObtainPairView
+
+    # path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),     # Now explicitly under /api/login
+    path('api/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),      # Override default TokenRefreshView
+
     path("api/orders/", include('food_delivery_system.orders.urls')),  # Include the orders app URLs under 'api/orders'.
     path("api/users/", include('food_delivery_system.users.urls')),     # Include the users app URLs under 'api/users'.
     path("api/restaurant/", include('food_delivery_system.restaurant.urls')),     # Include the users app URLs under 'api/restaurant'.
