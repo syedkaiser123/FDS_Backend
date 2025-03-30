@@ -117,23 +117,32 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericV
             for role, group_name in rbac_permissions.role_permissions_map.items():
                 if request.data.get("role") == role:
                     group_name = group_name["group"]
-                    group = Group.objects.get(name=group_name)
-                    user.groups.add(group)
+                    rbac_permissions.assign_role_permissions(user, role)
                     break  # Exit the loop once the role is matched
                 
             # Create a related restaurant atomically if the user is a restaurant owner
-            if request.data.get("role"):
-                restaurant = Restaurant.objects.create(
+            if request.data.get("role") == "restaurant":
+                restaurant, created = Restaurant.objects.get_or_create(
                     owner=user,
                     phone=user.phone_number,
                     name=request.data.get("restaurant_name", ""),
                     address=request.data.get("restaurant_address", ""),
                 )
-            
-            role = request.data.get("role")
-            # Create the Staff object if a role is provided
-            if role:
-                Staff.objects.create(user=user, restaurant=restaurant, role=role)
+                if created:
+                    user.is_restaurant = True
+                    user.save()
+                
+                # Create the Staff object if a role is restaurant
+                staff, staff_created = Staff.objects.get_or_create(user=user, restaurant=restaurant, role=role)
+                if staff_created:
+                    staff.role = role
+                    staff.save()
+            else:
+                # Create the Staff object for other roles
+                staff, staff_created = Staff.objects.get_or_create(user=user, restaurant=None, role=request.data.get("role", ""))
+                if staff_created:
+                    staff.role = role
+                    staff.save()
             
             return Response(
                     {

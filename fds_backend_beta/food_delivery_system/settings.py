@@ -84,11 +84,14 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'django_extensions',
     'graphene_django',
+    'graphql_jwt',
+    'graphql_jwt.refresh_token',
     'silk',
     'food_delivery_system',
     'food_delivery_system.orders',
     'food_delivery_system.users',
     'food_delivery_system.restaurant',
+
 ]
 
 REST_FRAMEWORK = {
@@ -102,6 +105,11 @@ REST_FRAMEWORK = {
     # 'EXCEPTION_HANDLER': 'food_delivery_system.exceptions.custom_exception_handler',
 }
 
+AUTHENTICATION_BACKENDS = [
+    "graphql_jwt.backends.JSONWebTokenBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # JWT Settings (Optional - Customize as needed)
 from datetime import timedelta
 
@@ -111,6 +119,11 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+GRAPHQL_JWT = {
+    "JWT_ALLOW_REFRESH": True,
+    "JWT_LONG_RUNNING_REFRESH_TOKEN": True,  # Enables long-term refresh token support
 }
 
 MIDDLEWARE = [
@@ -126,6 +139,12 @@ MIDDLEWARE = [
 
 # MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")
 
+GRAPHENE = {
+    "SCHEMA": "food_delivery_system.graphql.schema",
+        "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+    ],
+}
 
 ROOT_URLCONF = 'food_delivery_system.urls'
 
@@ -159,9 +178,6 @@ DATABASES = {
     }
 }
 
-GRAPHENE = {
-    "SCHEMA": "food_delivery_system.graphql.schema"
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

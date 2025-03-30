@@ -3,6 +3,7 @@ anyio==4.5.2
 appnope==0.1.4
 asgiref==3.8.1
 asttokens==3.0.0
+autopep8==2.3.1
 backcall==0.2.0
 backports.zoneinfo==0.2.1
 certifi==2025.1.31
@@ -12,6 +13,8 @@ decorator==5.2.1
 Django==4.2.20
 django-cors-headers==4.4.0
 django-extensions==3.2.3
+django-graphql-jwt==0.4.0
+django-silk==5.2.0
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 dnspython==2.6.1
@@ -20,6 +23,7 @@ exceptiongroup==1.2.2
 executing==2.2.0
 factory_boy==3.3.3
 Faker==35.2.2
+gprof2dot==2024.6.6
 graphene==3.4.3
 graphene-django==3.2.3
 graphql-core==3.2.6
@@ -43,6 +47,7 @@ psycopg==3.2.5
 psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pure_eval==0.2.3
+pycodestyle==2.12.1
 pydantic==2.10.6
 pydantic_core==2.27.2
 Pygments==2.19.1

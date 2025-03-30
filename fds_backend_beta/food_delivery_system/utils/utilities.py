@@ -143,7 +143,7 @@ class RBACPermissionManager:
             ObjectDoesNotExist: If the group does not exist.
         """
         try:
-            group = Group.objects.get(name=group_name)
+            group, created = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
         except ObjectDoesNotExist:
             raise ObjectDoesNotExist(f"Group '{group_name}' does not exist.")
