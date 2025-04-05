@@ -113,6 +113,9 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericV
             serializer.is_valid(raise_exception=True)
             user = serializer.save()
 
+            # Roles that require a restaurant association
+            restaurant_roles = ["manager", "chef", "delivery_personnel"]
+
             # Assign user to a group based on the given role
             for role, group_name in rbac_permissions.role_permissions_map.items():
                 if request.data.get("role") == role:
@@ -137,6 +140,30 @@ class UserViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, GenericV
                 if staff_created:
                     staff.role = role
                     staff.save()
+            
+            elif role in restaurant_roles:
+                restaurant_name = request.data.get("restaurant_name")
+                if not restaurant_name:
+                    raise ValidationError(f"A restaurant must be associated with the role '{role}'")
+
+                try:
+                    restaurant, created = Restaurant.objects.get_or_create(
+                                                                owner=None,
+                                                                phone=user.phone_number,
+                                                                name=request.data.get("restaurant_name", ""),
+                                                                address=request.data.get("restaurant_address", ""),
+                                                                )
+                    if created:
+                        user.is_restaurant = True
+                        user.save()
+                except Restaurant.DoesNotExist:
+                    raise ValidationError("The specified restaurant does not exist.")
+
+                staff, staff_created = Staff.objects.get_or_create(user=user, restaurant=restaurant, role=role)
+                if staff_created:
+                    staff.role = role
+                    staff.save()
+            
             else:
                 # Create the Staff object for other roles
                 staff, staff_created = Staff.objects.get_or_create(user=user, restaurant=None, role=request.data.get("role", ""))

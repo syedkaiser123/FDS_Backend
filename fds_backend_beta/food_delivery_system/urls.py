@@ -17,9 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.views.decorators.csrf import csrf_exempt
+
 from graphene_django.views import GraphQLView
-
-
+from graphql_jwt.decorators import jwt_cookie
 
 from food_delivery_system.views import homepage
 from .views import CustomTokenRefreshView, CustomTokenObtainPairView
@@ -42,6 +43,10 @@ urlpatterns = [
 
     # GraphQL viewsets
     path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
+    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    # path("graphql/", JSONWebTokenGraphQLView.as_view(graphiql=True)),
+
+
 
     # Silk Urls
     path('silk/', include('silk.urls', namespace='silk')),

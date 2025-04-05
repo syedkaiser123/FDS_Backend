@@ -6,7 +6,7 @@ User = CustomUser
 
 
 class Restaurant(models.Model):
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="restaurant")
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, null=True, related_name="restaurant")
     name = models.CharField(max_length=255, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)

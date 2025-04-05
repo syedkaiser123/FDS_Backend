@@ -51,7 +51,7 @@ LOGGING = {
     },
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",
+            "format": "{levelname} | {asctime} | {module} | {message}",
             "style": "{",
         },
     },
@@ -124,6 +124,8 @@ SIMPLE_JWT = {
 GRAPHQL_JWT = {
     "JWT_ALLOW_REFRESH": True,
     "JWT_LONG_RUNNING_REFRESH_TOKEN": True,  # Enables long-term refresh token support
+    "JWT_PAYLOAD_GET_USER_ID_HANDLER": "graphql_jwt.utils.jwt_get_user_id_from_payload",
+
 }
 
 MIDDLEWARE = [
@@ -137,12 +139,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
 
-# MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")
+MIDDLEWARE.append("food_delivery_system.middleware.LogRequestMiddleware")
 
 GRAPHENE = {
     "SCHEMA": "food_delivery_system.graphql.schema",
         "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
+        "food_delivery_system.middleware.QueryProfilerMiddleware"
     ],
 }
 

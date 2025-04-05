@@ -1,3 +1,4 @@
+import uuid
 
 from django.contrib.auth.models import Permission, Group
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,6 +16,11 @@ from food_delivery_system.permissions.permission import (
                                                         CanMarkDeliveredPermission
                                                         )
 
+
+def generate_request_id():
+    return str(uuid.uuid4())
+
+
 class UserPermissions:
     """
     Mixin class to assign permissions based on the action and user type.
@@ -24,12 +30,13 @@ class UserPermissions:
         """
         Assign permissions based on the action and user type, leveraging role-based access from the Staff model.
         """
+        import ipdb;ipdb.set_trace()
         # Deny access to the `create` endpoint for non-customers
-        if view.action == 'create':
+        if not "/graphql/" in view.path and view.action == 'create':
             # Ensure the user is authenticated and is a customer
             if not view.request.user or not view.request.user.is_authenticated:
                 raise PermissionDenied("You must be logged in to create an order.")
-
+        
             # Check if the user is a staff member with a specific role (e.g., manager, chef, etc.)
             staff = getattr(view.request.user, 'staff', None)  # Reverse relationship from Staff to CustomUser
             if ((staff and staff.role in ['manager', 'chef', 'delivery'])):     # removing admin clause (or not view.request.user.is_superuser)
@@ -37,6 +44,20 @@ class UserPermissions:
 
             # Apply `IsCustomer` permission for customers and admin.
             return [permissions.IsAuthenticated(), IsCustomer()]
+
+        elif "/graphql" in view.path and view.method == 'POST':     # Implementing role based permissions for GraphQL-query requests
+            import ipdb;ipdb.set_trace()
+            # Ensure the user is authenticated and is a customer
+            if not view.user or not view.user.is_authenticated:
+                raise PermissionDenied("You must be logged in to create an order.")
+
+            # Check if the user is a staff member with a specific role (e.g., manager, chef, etc.)
+            staff = getattr(view.user, 'staff', None)  # Reverse relationship from Staff to CustomUser
+            if ((staff and staff.role in ['manager', 'chef', 'delivery'])):     # removing admin clause (or not view.request.user.is_superuser)
+                raise PermissionDenied("Staff members, managers, and restaurant owners cannot create orders.")
+            
+            return True
+        return True  # fallback for other actions
 
         # # Allow admin users to bypass specific permissions for other actions
         # if view.request.user and view.request.user.is_superuser:
@@ -57,6 +78,22 @@ class UserPermissions:
         
         # Logic to mark the order as delivered
         return HttpResponse("Order marked as delivered.")
+    
+    @staticmethod
+    def get_user_authorization(request):
+        # Get token from headers
+        auth_header = request.headers.get("Authorization", None)
+        if not auth_header:
+            logger.error("No Authorization header provided!!!, Authentication required!")
+            raise GraphQLError("No Authorization header provided")
+
+        # Ensure correct format (JWT token)
+        if not auth_header.startswith("Bearer "):
+            logger.info(f"Invalid token format: '{auth_header}'. Use 'Bearer <token>'")
+            raise GraphQLError("Invalid token format. Use 'Bearer <token>'.")
+        token = auth_header.split("Bearer ")[1]
+
+        return token
 
 
 class RBACPermissionManager:
