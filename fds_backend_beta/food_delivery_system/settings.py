@@ -123,6 +123,9 @@ SIMPLE_JWT = {
 
 GRAPHQL_JWT = {
     "JWT_ALLOW_REFRESH": True,
+    "JWT_ALLOW_ARGUMENT": True,
+    # "JWT_ALLOW_ANY_CLASSES": [],
+    "JWT_ALLOW_ANY_HANDLER": lambda info, **kwargs: False,
     "JWT_LONG_RUNNING_REFRESH_TOKEN": True,  # Enables long-term refresh token support
     "JWT_PAYLOAD_GET_USER_ID_HANDLER": "graphql_jwt.utils.jwt_get_user_id_from_payload",
 
@@ -145,9 +148,14 @@ GRAPHENE = {
     "SCHEMA": "food_delivery_system.graphql.schema",
         "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
-        "food_delivery_system.middleware.QueryProfilerMiddleware"
+        # "food_delivery_system.middlewares.jwt_middleware.CustomJWTMiddleware",
+        "food_delivery_system.middleware.QueryProfilerMiddleware",
     ],
 }
+
+# Enable or disable custom JWT middleware
+ENABLE_CUSTOM_JWT_MIDDLEWARE = True
+
 
 ROOT_URLCONF = 'food_delivery_system.urls'
 

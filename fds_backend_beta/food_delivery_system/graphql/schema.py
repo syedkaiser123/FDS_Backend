@@ -1,5 +1,6 @@
 import logging
 import time
+import jwt
 
 from django.contrib.auth.hashers import make_password
 
@@ -16,12 +17,15 @@ from graphql_jwt.shortcuts import get_token, get_refresh_token
 from graphql_jwt.utils import get_payload, get_user_by_payload, jwt_decode
 
 
+
+
 logger = logging.getLogger("data.log")
 
 from food_delivery_system.utils.utilities import RBACPermissionManager
 from food_delivery_system.restaurant.models import Restaurant
 from food_delivery_system.orders.models import Staff
 from food_delivery_system.utils.utilities import UserPermissions
+from food_delivery_system import settings
 
 from food_delivery_system.graphql.permissions import BaseMutation
 
@@ -74,36 +78,42 @@ class CreateUser(BaseMutation):
         role = graphene.String(required=False)
         restaurant_name = graphene.String(required=False)
         restaurant_address = graphene.String(required=False)
+        token = graphene.String(required=True) 
+
+    success = graphene.Boolean()
+    user_id = graphene.Int()
 
     user = graphene.Field(CustomUserType)
     role = graphene.String()
     message = graphene.String()
 
-    # @silk_profile(name="GraphQL - Create User")
     @classmethod
     def mutate(cls, root, info, **kwargs):
+        # Since the above decorator is not compatible with a profiler, hence declaring an internal silk profiler.
         from silk.profiling.profiler import silk_profile
         with silk_profile(name="GraphQL - Create User"):
-            request = info.context
-            user = request.user
-            token = user_authorization(request)
-
+            # request = info.context
+            # user = request.user
+            token = kwargs.get("token", None)
             try:
-                # payload = jwt_decode(token) 
-                # # user = get_user_by_payload(payload)   # TODO: unable to get/fetch a user by its payload.
-                # user = get_user_model().objects.get(id=payload.get("user_id"))
-                # if not user:
-                #     logger.error("Invalid token or user not found.")
-                #     raise GraphQLError("Invalid token or user not found.")
-                # if not user or not user.is_authenticated:
-                #     raise GraphQLError("Authentication credentials were not provided. If they are, then they must be wrong!")
+                # manually decode the JWT token
+                payload = jwt.decode(
+                    token,
+                    settings.SECRET_KEY,
+                    algorithms=["HS256"],  # Adjust this if you're using RS256 or others
+                )
+                username = payload.get("username")
+                if not username:
+                    raise GraphQLError("Token does not contain a valid username.")
+                
+                # Get the user from the token
+                user_from_token = User.objects.get(username=username)
 
+                if not user_from_token or not user_from_token.is_authenticated:
+                    raise GraphQLError("Authentication credentials were not provided. If they are, then they must be wrong!")
 
-                # Authenticate the request
-                request.user = user  # Override anonymous user
-                cls.check_permissions(info)
-
-                logger.info(f"Authenticated user: '{user.username}'. Overriding AnonymousUser.")
+                if user_from_token.is_anonymous:
+                    raise GraphQLError("Authentication required to create a user.")
 
                 # Extract fields dynamically
                 user_data = {field: kwargs[field] for field in kwargs if kwargs[field] is not None}
@@ -119,7 +129,6 @@ class CreateUser(BaseMutation):
                         logger.error(f"{field.replace('_', ' ').capitalize()} '{user_data[field]}' already exists.")
                         raise Exception(f"{field.replace('_', ' ').capitalize()} '{user_data[field]}' already exists.")
 
-                
                 # Create the user
                 # Set password using set_password to hash it
                 # Note: Django's User model requires the password to be set using set_password
@@ -146,7 +155,6 @@ class CreateUser(BaseMutation):
                     rbac_permissions.assign_role_permissions(user, role)
                     logger.info(f"User '{username}' assigned to group '{group_name}' with role '{role}'.")
                 
-                import ipdb;ipdb.set_trace()
                 # Create a restaurant and a Staff object if role exists.
                 # Create a related restaurant atomically if the user is a restaurant owner
                 if user_data.get("role") == "restaurant":
@@ -204,6 +212,14 @@ class CreateUser(BaseMutation):
                         logger.info(f"Staff object created for user '{user.username}'.")
 
                 return CreateUser(user=user, role=role, message="User created successfully!")
+            except jwt.exceptions.DecodeError:
+                raise GraphQLError("Invalid token: Signature decode error.")
+            except jwt.exceptions.ExpiredSignatureError:
+                raise GraphQLError("Token has expired.")
+            except jwt.exceptions.InvalidTokenError as e:
+                raise GraphQLError(f"Invalid token: {str(e)}")
+            except User.DoesNotExist:
+                raise GraphQLError("User in token does not exist.")
             except Exception as e:
                 raise GraphQLError(f"error: {str(e)}")
 

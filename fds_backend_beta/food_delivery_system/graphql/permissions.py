@@ -13,6 +13,7 @@ class BaseMutation(graphene.Mutation):
     def check_permissions(cls, info):
         request = info.context
         try:
+            # Exploit user auth module from utils/utilities.py
             UserPermissions.get_permissions(cls, request)
         except PermissionDenied as e:
             raise GraphQLError(str(e))

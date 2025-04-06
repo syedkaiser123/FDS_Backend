@@ -30,7 +30,7 @@ class UserPermissions:
         """
         Assign permissions based on the action and user type, leveraging role-based access from the Staff model.
         """
-        import ipdb;ipdb.set_trace()
+        # import ipdb;ipdb.set_trace()
         # Deny access to the `create` endpoint for non-customers
         if not "/graphql/" in view.path and view.action == 'create':
             # Ensure the user is authenticated and is a customer
@@ -46,7 +46,7 @@ class UserPermissions:
             return [permissions.IsAuthenticated(), IsCustomer()]
 
         elif "/graphql" in view.path and view.method == 'POST':     # Implementing role based permissions for GraphQL-query requests
-            import ipdb;ipdb.set_trace()
+            # import ipdb;ipdb.set_trace()
             # Ensure the user is authenticated and is a customer
             if not view.user or not view.user.is_authenticated:
                 raise PermissionDenied("You must be logged in to create an order.")
