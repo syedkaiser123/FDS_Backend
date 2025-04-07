@@ -30,7 +30,9 @@ from food_delivery_system.utils.utilities import UserPermissions
 from food_delivery_system import settings
 
 from food_delivery_system.graphql.permissions import BaseMutation
+from food_delivery_system.graphql.utilities.utils import UserAuthentication
 
+user_auth = UserAuthentication()
 rbac_permissions = RBACPermissionManager()
 user_authorization = UserPermissions().get_user_authorization
 User = get_user_model()
@@ -75,24 +77,9 @@ class CreateUser(BaseMutation):
             # user = request.user
             token = kwargs.get("token", None)
             try:
-                # manually decode the JWT token
-                payload = jwt.decode(
-                    token,
-                    settings.SECRET_KEY,
-                    algorithms=["HS256"],  # Adjust this if you're using RS256 or others
-                )
-                username = payload.get("username")
-                if not username:
-                    raise GraphQLError("Token does not contain a valid username.")
-                
-                # Get the user from the token
-                user_from_token = User.objects.get(username=username)
-
-                if not user_from_token or not user_from_token.is_authenticated:
-                    raise GraphQLError("Authentication credentials were not provided. If they are, then they must be wrong!")
-
-                if user_from_token.is_anonymous:
-                    raise GraphQLError("Authentication required to create a user.")
+                user_authentication = user_auth.get_user_authentication(token)
+                if not user_authentication:
+                    raise GraphQLError(f"Authentication is required. Please check if the token is valid.")
 
                 # Extract fields dynamically
                 user_data = {field: kwargs[field] for field in kwargs if kwargs[field] is not None}
