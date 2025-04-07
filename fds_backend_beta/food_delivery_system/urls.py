@@ -44,7 +44,6 @@ urlpatterns = [
     # GraphQL viewsets
     path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
-    # path("graphql/", JSONWebTokenGraphQLView.as_view(graphiql=True)),
 
 
 
